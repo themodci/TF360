@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Total Fitness Tracker</title>
+<style>
+:root {
+  --bg:#0b1020; --card:#121a2e; --card2:#18233b; --text:#f8fafc; --muted:#9fb0c8;
+  --accent:#60a5fa; --accent2:#34d399; --danger:#fb7185; --line:#2a3858;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#08101f,#0b1020 35%,#0d1324);color:var(--text);
+font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;min-height:100vh}
+header{position:sticky;top:0;z-index:20;background:rgba(11,16,32,.94);backdrop-filter:blur(12px);
+border-bottom:1px solid var(--line);padding:max(12px,env(safe-area-inset-top)) 16px 12px}
+h1{font-size:22px;margin:0} .sub{color:var(--muted);font-size:13px;margin-top:3px}
+main{max-width:760px;margin:auto;padding:16px 14px calc(90px + env(safe-area-inset-bottom))}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(10,15,29,.97);backdrop-filter:blur(12px);
+border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom));display:flex;gap:6px;justify-content:center}
+nav button{flex:1;max-width:170px;border:0;background:transparent;color:var(--muted);padding:10px 5px;border-radius:12px;font-weight:700}
+nav button.active{background:var(--card2);color:white}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.row{display:flex;gap:10px;align-items:center} .between{justify-content:space-between}
+button,.btn{cursor:pointer} .primary{background:var(--accent);color:#07101d;border:0;border-radius:12px;padding:12px 14px;font-weight:800}
+.secondary{background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-weight:700}
+.danger{background:transparent;color:var(--danger);border:1px solid #5e2a3b;border-radius:12px;padding:9px 11px}
+select,input,textarea{width:100%;background:#0c1427;color:white;border:1px solid var(--line);border-radius:11px;padding:10px;font-size:16px}
+label{font-size:12px;color:var(--muted);display:block;margin:4px 0 6px}
+.exercise{padding:12px 0;border-top:1px solid var(--line)} .exercise:first-child{border-top:0}
+.exercise h3{margin:0 0 4px;font-size:17px} .meta{font-size:12px;color:var(--muted)}
+.setgrid{display:grid;grid-template-columns:42px 1fr 1fr 1fr 40px;gap:7px;align-items:center;margin-top:8px}
+.setgrid .head{font-size:11px;color:var(--muted);text-align:center}
+.check{width:22px;height:22px}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#10213c;color:#9cc7ff;font-size:11px;font-weight:700}
+.hidden{display:none!important}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#0c1427;border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.stat b{display:block;font-size:18px} .stat span{font-size:11px;color:var(--muted)}
+.history-item{border-top:1px solid var(--line);padding:11px 0} .history-item:first-child{border-top:0}
+.small{font-size:12px;color:var(--muted)} .green{color:var(--accent2)} .spacer{height:6px}
+canvas{width:100%;height:180px;background:#0c1427;border-radius:14px;border:1px solid var(--line)}
+.note{font-size:13px;color:var(--muted);line-height:1.4}
+@media(max-width:430px){.setgrid{grid-template-columns:34px 1fr 1fr 1fr 34px;gap:5px} .statgrid{grid-template-columns:1fr 1fr 1fr}}
+</style>
+</head>
+<body>
+<header><h1>Total Fitness Tracker</h1><div class="sub">Chest • Biceps • Abs • Mountain fitness</div></header>
+<main>
+<section id="workoutTab">
+  <div class="card">
+    <label>Select workout</label>
+    <select id="workoutSelect"></select>
+    <div class="spacer"></div>
+    <div class="row">
+      <button class="primary" id="startBtn">Start workout</button>
+      <button class="secondary" id="fillLastBtn">Load last results</button>
+    </div>
+  </div>
+  <div id="activeWorkout" class="hidden">
+    <div class="card">
+      <div class="row between"><div><b id="activeTitle"></b><div class="small" id="timerText">00:00</div></div>
+      <button class="secondary" id="timerBtn">Start timer</button></div>
+    </div>
+    <div id="exerciseList"></div>
+    <div class="card">
+      <label>Workout notes</label><textarea id="workoutNotes" rows="3" placeholder="Energy, pain, form, PRs..."></textarea>
+      <div class="spacer"></div><button class="primary" id="saveWorkout">Save workout</button>
+    </div>
+  </div>
+</section>
+
+<section id="historyTab" class="hidden">
+  <div class="card">
+    <div class="row between"><b>Workout history</b><button class="secondary" id="exportBtn">Export backup</button></div>
+    <div id="historyList"></div>
+  </div>
+</section>
+
+<section id="progressTab" class="hidden">
+  <div class="card">
+    <b>Progress</b>
+    <div class="spacer"></div>
+    <div class="statgrid">
+      <div class="stat"><b id="statWorkouts">0</b><span>Workouts</span></div>
+      <div class="stat"><b id="statSets">0</b><span>Sets logged</span></div>
+      <div class="stat"><b id="statVolume">0</b><span>Total volume</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <label>Exercise</label><select id="progressExercise"></select>
+    <div class="spacer"></div>
+    <canvas id="progressCanvas" width="700" height="260"></canvas>
+    <div class="note">Chart shows your best estimated strength score over time using weight × reps for each logged set.</div>
+  </div>
+</section>
+
+<section id="outdoorTab" class="hidden">
+  <div class="card">
+    <b>Outdoor / Cardio Log</b>
+    <div class="spacer"></div>
+    <label>Activity</label><select id="activityType"><option>Hike</option><option>Splitboard</option><option>Zone 2</option><option>Bike</option><option>Other</option></select>
+    <div class="row"><div style="flex:1"><label>Miles</label><input id="miles" type="number" step=".1"></div>
+    <div style="flex:1"><label>Elevation gain (ft)</label><input id="vert" type="number" step="50"></div></div>
+    <div class="row"><div style="flex:1"><label>Minutes</label><input id="minutes" type="number"></div>
+    <div style="flex:1"><label>Avg HR</label><input id="avgHr" type="number"></div></div>
+    <label>RPE (1–10)</label><input id="rpe" type="number" min="1" max="10">
+    <div class="spacer"></div><button class="primary" id="saveOutdoor">Save activity</button>
+  </div>
+  <div class="card"><b>Recent activities</b><div id="outdoorHistory"></div></div>
+</section>
+
+<section id="settingsTab" class="hidden">
+  <div class="card"><b>Backup & restore</b>
+    <p class="note">Your data is stored on this device in your browser. Export a backup periodically, especially before changing phones or clearing Safari data.</p>
+    <input id="importFile" type="file" accept="application/json">
+    <div class="spacer"></div><button class="secondary" id="importBtn">Import backup</button>
+  </div>
+  <div class="card"><b>Install on iPhone</b>
+    <p class="note">When hosted over HTTPS, open this page in Safari → Share → Add to Home Screen. It will behave like an app.</p>
+  </div>
+</section>
+</main>
+
+<nav>
+<button data-tab="workoutTab" class="active">Workout</button>
+<button data-tab="historyTab">History</button>
+<button data-tab="progressTab">Progress</button>
+<button data-tab="outdoorTab">Outdoor</button>
+<button data-tab="settingsTab">Settings</button>
+</nav>
+
+<script>
+const WORKOUTS = {"Monday \u2014 Upper A: Chest Priority": [{"name": "Incline DB Press", "sets": 4, "reps": "6\u201310", "rest": "2\u20133 min", "muscle": "Chest"}, {"name": "Flat Machine or DB Press", "sets": 3, "reps": "8\u201312", "rest": "2 min", "muscle": "Chest"}, {"name": "Chest Dips", "sets": 3, "reps": "6\u201312", "rest": "2 min", "muscle": "Chest"}, {"name": "Chest-Supported Row", "sets": 3, "reps": "8\u201312", "rest": "90\u2013120 sec", "muscle": "Back"}, {"name": "Cable Fly", "sets": 2, "reps": "12\u201315", "rest": "60\u201390 sec", "muscle": "Chest"}, {"name": "Cable Lateral Raise", "sets": 3, "reps": "12\u201320", "rest": "60\u201390 sec", "muscle": "Shoulders"}, {"name": "Cable Crunch", "sets": 3, "reps": "10\u201315", "rest": "60 sec", "muscle": "Abs"}, {"name": "Hanging Leg Raise", "sets": 3, "reps": "8\u201315", "rest": "60 sec", "muscle": "Abs"}], "Tuesday \u2014 Lower A + Back/Biceps": [{"name": "Hack Squat", "sets": 3, "reps": "6\u201310", "rest": "2 min", "muscle": "Legs"}, {"name": "Romanian Deadlift", "sets": 3, "reps": "6\u201310", "rest": "2 min", "muscle": "Legs"}, {"name": "Bulgarian Split Squat", "sets": 2, "reps": "8\u201312 / leg", "rest": "90 sec", "muscle": "Legs"}, {"name": "Lat Pulldown or Pull-Up", "sets": 3, "reps": "6\u201310", "rest": "90\u2013120 sec", "muscle": "Back"}, {"name": "EZ-Bar Curl", "sets": 3, "reps": "6\u201310", "rest": "60\u201390 sec", "muscle": "Biceps"}, {"name": "Incline DB Curl", "sets": 3, "reps": "8\u201312", "rest": "60\u201390 sec", "muscle": "Biceps"}, {"name": "Calf Raise", "sets": 2, "reps": "10\u201315", "rest": "60\u201390 sec", "muscle": "Calves"}], "Friday \u2014 Upper B: Chest + Back + Biceps": [{"name": "Incline Smith Press", "sets": 3, "reps": "6\u201310", "rest": "2\u20132.5 min", "muscle": "Chest"}, {"name": "Pull-Ups or Lat Pulldown", "sets": 3, "reps": "8\u201312", "rest": "90\u2013120 sec", "muscle": "Back"}, {"name": "Machine Chest Press", "sets": 3, "reps": "8\u201312", "rest": "90\u2013120 sec", "muscle": "Chest"}, {"name": "Seated Cable Row", "sets": 3, "reps": "8\u201312", "rest": "90 sec", "muscle": "Back"}, {"name": "Pec Deck or Cable Fly", "sets": 2, "reps": "12\u201315", "rest": "60\u201390 sec", "muscle": "Chest"}, {"name": "Preacher Curl", "sets": 3, "reps": "8\u201312", "rest": "60\u201390 sec", "muscle": "Biceps"}, {"name": "Hammer Curl", "sets": 3, "reps": "8\u201312", "rest": "60\u201390 sec", "muscle": "Biceps"}, {"name": "Reverse Pec Deck", "sets": 2, "reps": "12\u201320", "rest": "60 sec", "muscle": "Rear Delts"}], "Saturday \u2014 Lower B + Shoulders + Abs": [{"name": "Leg Press or Front Squat", "sets": 3, "reps": "8\u201312", "rest": "2 min", "muscle": "Legs"}, {"name": "Hip Thrust", "sets": 3, "reps": "8\u201312", "rest": "2 min", "muscle": "Glutes"}, {"name": "Leg Curl", "sets": 3, "reps": "10\u201315", "rest": "90 sec", "muscle": "Hamstrings"}, {"name": "Walking Lunge or Step-Up", "sets": 2, "reps": "10\u201312 / leg", "rest": "90 sec", "muscle": "Legs"}, {"name": "DB or Machine Shoulder Press", "sets": 3, "reps": "6\u201310", "rest": "2 min", "muscle": "Shoulders"}, {"name": "Cable Lateral Raise", "sets": 3, "reps": "12\u201320", "rest": "60\u201390 sec", "muscle": "Shoulders"}, {"name": "Ab Wheel", "sets": 3, "reps": "6\u201312", "rest": "60 sec", "muscle": "Abs"}, {"name": "Weighted Cable Crunch", "sets": 3, "reps": "10\u201315", "rest": "60 sec", "muscle": "Abs"}]};
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const key='totalFitnessTracker_v1';
+let db = JSON.parse(localStorage.getItem(key) || '{"workouts":[],"outdoor":[]}');
+function persist(){ localStorage.setItem(key, JSON.stringify(db)); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+const select=$('#workoutSelect');
+Object.keys(WORKOUTS).forEach(n=>select.add(new Option(n,n)));
+let activeName=null, startedAt=null, timer=null;
+
+function renderWorkout(name){
+  activeName=name; $('#activeTitle').textContent=name; $('#activeWorkout').classList.remove('hidden');
+  $('#exerciseList').innerHTML='';
+  WORKOUTS[name].forEach((ex,ei)=>{
+    const card=document.createElement('div'); card.className='card';
+    let rows=`<div class="exercise"><div class="row between"><div><h3>${ex.name}</h3><div class="meta">${ex.sets} sets × ${ex.reps} • Rest ${ex.rest}</div></div><span class="badge">${ex.muscle}</span></div>`;
+    rows+=`<div class="setgrid"><div class="head">Set</div><div class="head">Weight</div><div class="head">Reps</div><div class="head">RIR</div><div class="head">✓</div>`;
+    for(let s=1;s<=ex.sets;s++) rows+=`<div>${s}</div><input inputmode="decimal" data-e="${ei}" data-s="${s}" data-f="weight" type="number" step=".5"><input inputmode="numeric" data-e="${ei}" data-s="${s}" data-f="reps" type="number"><input inputmode="numeric" data-e="${ei}" data-s="${s}" data-f="rir" type="number" min="0" max="5"><input class="check" data-e="${ei}" data-s="${s}" data-f="done" type="checkbox">`;
+    rows+='</div></div>'; card.innerHTML=rows; $('#exerciseList').appendChild(card);
+  });
+}
+$('#startBtn').onclick=()=>renderWorkout(select.value);
+
+$('#fillLastBtn').onclick=()=>{
+  const name=select.value; if(activeName!==name) renderWorkout(name);
+  const last=[...db.workouts].reverse().find(w=>w.name===name); if(!last) return alert('No previous results for this workout yet.');
+  last.exercises.forEach((ex,ei)=> ex.sets.forEach((set,si)=> {
+    ['weight','reps','rir'].forEach(f=>{ const el=document.querySelector(`[data-e="${ei}"][data-s="${si+1}"][data-f="${f}"]`); if(el) el.value=set[f]??''; });
+  }));
+};
+
+$('#timerBtn').onclick=()=>{
+  if(timer){clearInterval(timer);timer=null;$('#timerBtn').textContent='Start timer';return;}
+  startedAt=Date.now(); $('#timerBtn').textContent='Pause timer';
+  timer=setInterval(()=>{let sec=Math.floor((Date.now()-startedAt)/1000),m=String(Math.floor(sec/60)).padStart(2,'0'),s=String(sec%60).padStart(2,'0');$('#timerText').textContent=`${m}:${s}`; },1000);
+};
+
+$('#saveWorkout').onclick=()=>{
+  if(!activeName) return;
+  const exercises=WORKOUTS[activeName].map((ex,ei)=>({name:ex.name,muscle:ex.muscle,sets:Array.from({length:ex.sets},(_,si)=>{
+    const q=f=>document.querySelector(`[data-e="${ei}"][data-s="${si+1}"][data-f="${f}"]`);
+    return {weight:+q('weight').value||0,reps:+q('reps').value||0,rir:q('rir').value===''?null:+q('rir').value,done:q('done').checked};
+  })}));
+  db.workouts.push({id:Date.now(),date:new Date().toISOString(),name:activeName,notes:$('#workoutNotes').value,exercises});
+  persist(); alert('Workout saved.'); renderHistory(); renderProgress(); $('#workoutNotes').value='';
+};
+
+function renderHistory(){
+  const box=$('#historyList'); box.innerHTML='';
+  [...db.workouts].reverse().forEach(w=>{
+    const totalSets=w.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.weight||s.reps).length,0);
+    const el=document.createElement('div');el.className='history-item';
+    el.innerHTML=`<div class="row between"><div><b>${esc(w.name)}</b><div class="small">${new Date(w.date).toLocaleString()} • ${totalSets} sets</div></div><button class="danger" data-del="${w.id}">Delete</button></div>${w.notes?`<div class="small">${esc(w.notes)}</div>`:''}`;
+    box.appendChild(el);
+  });
+  $$('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('Delete this workout?')){db.workouts=db.workouts.filter(w=>w.id!=b.dataset.del);persist();renderHistory();renderProgress();}});
+}
+
+function renderProgress(){
+  $('#statWorkouts').textContent=db.workouts.length;
+  let sets=0,vol=0,names=new Set();
+  db.workouts.forEach(w=>w.exercises.forEach(e=>{names.add(e.name);e.sets.forEach(s=>{if(s.weight||s.reps)sets++;vol+=s.weight*s.reps;})}));
+  $('#statSets').textContent=sets; $('#statVolume').textContent=vol>100000?(vol/1000).toFixed(0)+'k':Math.round(vol).toLocaleString();
+  const pe=$('#progressExercise'), cur=pe.value;pe.innerHTML='';[...names].sort().forEach(n=>pe.add(new Option(n,n)));if(cur&&names.has(cur))pe.value=cur; drawChart();
+}
+$('#progressExercise').onchange=drawChart;
+
+function drawChart(){
+  const c=$('#progressCanvas'),ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
+  const name=$('#progressExercise').value;if(!name)return;
+  let pts=[];db.workouts.forEach(w=>{const e=w.exercises.find(x=>x.name===name);if(e){const best=Math.max(0,...e.sets.map(s=>s.weight*s.reps));if(best)pts.push([new Date(w.date),best]);}});
+  ctx.strokeStyle='#2a3858';ctx.lineWidth=1;for(let i=1;i<=4;i++){let y=i*c.height/5;ctx.beginPath();ctx.moveTo(45,y);ctx.lineTo(c.width-12,y);ctx.stroke();}
+  if(!pts.length)return;
+  const vals=pts.map(p=>p[1]),min=Math.min(...vals),max=Math.max(...vals),range=Math.max(1,max-min);
+  const x=i=>45+(c.width-65)*(pts.length===1?.5:i/(pts.length-1));
+  const y=v=>c.height-30-(c.height-55)*(v-min)/range;
+  ctx.strokeStyle='#60a5fa';ctx.lineWidth=4;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(x(i),y(p[1])):ctx.moveTo(x(i),y(p[1])));ctx.stroke();
+  ctx.fillStyle='#34d399';pts.forEach((p,i)=>{ctx.beginPath();ctx.arc(x(i),y(p[1]),5,0,Math.PI*2);ctx.fill();});
+  ctx.fillStyle='#9fb0c8';ctx.font='12px -apple-system';ctx.fillText('Strength score',10,16);ctx.fillText(String(Math.round(max)),8,42);ctx.fillText(String(Math.round(min)),8,c.height-28);
+}
+
+$('#saveOutdoor').onclick=()=>{
+  db.outdoor.push({id:Date.now(),date:new Date().toISOString(),type:$('#activityType').value,miles:+$('#miles').value||0,vert:+$('#vert').value||0,minutes:+$('#minutes').value||0,avgHr:+$('#avgHr').value||0,rpe:+$('#rpe').value||0});
+  persist(); ['#miles','#vert','#minutes','#avgHr','#rpe'].forEach(id=>$(id).value=''); renderOutdoor(); alert('Activity saved.');
+};
+function renderOutdoor(){
+  $('#outdoorHistory').innerHTML=[...db.outdoor].reverse().slice(0,20).map(a=>`<div class="history-item"><b>${esc(a.type)}</b><div class="small">${new Date(a.date).toLocaleDateString()} • ${a.miles||0} mi • ${a.vert||0} ft • ${a.minutes||0} min ${a.avgHr?`• ${a.avgHr} bpm`:''} ${a.rpe?`• RPE ${a.rpe}`:''}</div></div>`).join('');
+}
+
+function exportBackup(){
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='total-fitness-backup.json';a.click();URL.revokeObjectURL(a.href);
+}
+$('#exportBtn').onclick=exportBackup;
+$('#importBtn').onclick=()=>{
+  const f=$('#importFile').files[0];if(!f)return alert('Choose a backup file first.');
+  const r=new FileReader();r.onload=()=>{try{db=JSON.parse(r.result);persist();renderHistory();renderProgress();renderOutdoor();alert('Backup imported.');}catch(e){alert('Could not read that backup.')}};r.readAsText(f);
+};
+
+$$('nav button').forEach(b=>b.onclick=()=>{$$('nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');['workoutTab','historyTab','progressTab','outdoorTab','settingsTab'].forEach(id=>$('#'+id).classList.toggle('hidden',id!==b.dataset.tab));if(b.dataset.tab==='progressTab')renderProgress();});
+renderHistory();renderProgress();renderOutdoor();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
