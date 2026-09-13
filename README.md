@@ -1,23 +1,21 @@
-# Total Fitness Tracker
+# Total Fitness Coach v2
 
-A mobile-first workout tracker built for your current 4-day lifting split plus hiking/splitboarding.
+## What's new
+- Uses workout history to infer the next workout in the 4-session rotation
+- Uses day of week as context rather than hard-coding the workout
+- Prompts you to choose if there is not enough history
+- Workout Duration selector: 30 / 45 / 60 / 75 / 90 minutes
+- Automatically trims lower-priority accessory volume to fit the available time
+- Protects high-priority chest, biceps, major compounds and core work
+- Shows last performance and gives a next-session progression recommendation
+- Holistic 30/60/90/180/365 day tracking
+- Body weight, waist, chest and arm check-ins
+- Outdoor hiking / splitboarding / cardio tracking
+- Exercise estimated 1RM trend charts
+- Backup / restore
 
-## Features
-- Select Monday, Tuesday, Friday, or Saturday workouts
-- Log weight, reps, RIR, and completed sets
-- Re-load your last results for fast progressive overload
-- Workout timer
-- Workout history
-- Exercise progress chart
-- Hiking / splitboarding / cardio log
-- Local on-device storage
-- Export/import JSON backup
-- Add to iPhone Home Screen when hosted over HTTPS
+## Upgrade from the old GitHub version
+Replace the existing index.html, manifest.webmanifest and sw.js in your repository with the files in this folder, then commit the changes.
+GitHub Pages will redeploy automatically.
 
-## Fastest way to use it on iPhone
-1. Upload the contents of this folder to any static web host (Netlify Drop, GitHub Pages, Cloudflare Pages, etc.).
-2. Open the resulting HTTPS link in Safari on your iPhone.
-3. Tap Share → Add to Home Screen.
-4. Open it from the Home Screen like an app.
-
-Your workout data stays in that browser/device unless you export and restore a backup.
+Data remains local to the browser/device, so export a backup periodically.
